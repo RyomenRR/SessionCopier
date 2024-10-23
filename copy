@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# List all files and directories in the current directory
+echo "Files and directories in the current directory:"
+items=($(ls))
+
+# Ask the user to choose a file or directory
+echo "Choose a file or directory:"
+select item in "${items[@]}"; do
+    if [ -n "$item" ]; then
+        echo "You chose: $item"
+        break
+    else
+        echo "Invalid choice. Please try again."
+    fi
+done
+
+# List all directories in the path "/data/data/com.termux/files/home"
+echo -e "\nDirectories in /data/data/com.termux/files/home:"
+dirs=($(ls -d /data/data/com.termux/files/home/*/))
+
+# Ask the user to choose a directory
+echo "Choose a directory:"
+select dir in "${dirs[@]}"; do
+    if [ -n "$dir" ]; then
+        echo "You chose: $dir"
+        # Copy the selected file or directory to the chosen directory
+        cp -r "$item" "$dir"
+        echo "$item has been copied to $dir"
+        break
+    else
+        echo "Invalid choice. Please try again."
+    fi
+done
