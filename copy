@@ -1,34 +1,64 @@
 #!/bin/bash
 
-# List all files and directories in the current directory
-echo "Files and directories in the current directory:"
-files=($(ls))
+# Define the home directory and temporary directory
+HOME_DIR="/data/data/com.termux/files/home"
+TEMP_DIR="/data/data/com.termux/files/tmp"
 
-# Ask the user to choose a file or directory
-echo "Choose a file or directory:"
-select item in "${files[@]}"; do
-    if [ -n "$item" ]; then
-        echo "You chose: $item"
-        break
+# Create the temporary directory if it doesn't exist
+mkdir -p "$TEMP_DIR"
+
+# Function to check for 'sessions' folder
+check_sessions_folder() {
+    if [ -d "sessions" ]; then
+        echo -e "\nSuccess: The 'sessions' folder exist."
+        # Copy the 'sessions' folder to the temporary directory
+        cp -r "sessions" "$TEMP_DIR"
+        return 0
     else
-        echo "Invalid choice. Please try again."
+        echo -e "\nError: The 'sessions' folder was not found in $1."
+        return 1
     fi
-done
+}
 
-# List all directories in the path "/data/data/com.termux/files/home"
-echo -e "\nDirectories in /data/data/com.termux/files/home:"
-dirs=($(ls -d /data/data/com.termux/files/home/*/ | xargs -n 1 basename))
+# List directories in the home directory
+echo "Select a name of script for sessions to copy:"
+cd "$HOME_DIR" || exit 1  # Change to the home directory
 
-# Ask the user to choose a directory
-echo "Choose a directory:"
-select dir in "${dirs[@]}"; do
-    if [ -n "$dir" ]; then
-        echo "You chose: $dir"
-        # Copy the selected file or directory to the chosen directory
-        cp -r "$item" "/data/data/com.termux/files/home/$dir"
-        echo "$item has been copied to $dir"
+# Use select to list directories without full path and without trailing slash
+select dir in *; do
+    # Check if a valid selection was made and if it's a directory
+    if [ -n "$dir" ] && [ -d "$dir" ]; then
+        echo -e "\nYou selected: $dir"
+        
+        # Change to the selected directory
+        cd "$dir" || exit 1
+        
+        # Check for the 'sessions' folder
+        if check_sessions_folder "$dir"; then
+            # List directories again for pasting the copied folder
+            echo -e "\nSelect a name of Script to paste the 'sessions' folder:"
+            cd "$HOME_DIR" || exit 1  # Change back to the home directory
+
+            select target_dir in *; do
+                # Check if a valid selection was made and if it's a directory
+                if [ -n "$target_dir" ] && [ -d "$target_dir" ]; then
+                    echo -e "\nYou selected: $target_dir"
+
+                    # Copy the 'sessions' folder from the temporary directory to the selected directory
+                    if cp -r "$TEMP_DIR/sessions" "$HOME_DIR/$target_dir/"; then
+                        echo -e "\nSuccess: The 'sessions' folder has been copied to $target_dir."
+                    else
+                        echo -e "\nError: Failed to copy the 'sessions' folder to $target_dir."
+                    fi
+                    break
+                else
+                    echo "Invalid selection. Please try again."
+                fi
+            done
+        fi
+        
         break
     else
-        echo "Invalid choice. Please try again."
+        echo "Invalid selection. Please try again."
     fi
 done
